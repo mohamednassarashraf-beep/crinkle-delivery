@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام مناطق التوصيل - Crinkle</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --primary: #1a2e4a;
+  --accent: #e8a020;
+  --accent2: #2196b8;
+  --bg: #f0f4f8;
+  --card: #ffffff;
+  --text: #1a2e4a;
+  --muted: #6b7e95;
+  --green: #16a34a;
+  --green-bg: #dcfce7;
+  --red: #dc2626;
+  --red-bg: #fee2e2;
+  --border: #dde4ed;
+  --shadow: 0 4px 24px rgba(26,46,74,0.10);
+  --radius: 16px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Cairo', sans-serif; background: var(--bg); color: var(--text); direction: rtl; min-height: 100vh; }
+
+header {
+  background: var(--primary);
+  position: sticky; top: 0; z-index: 200;
+  box-shadow: 0 2px 16px rgba(26,46,74,0.25);
+}
+.header-inner {
+  max-width: 1300px; margin: 0 auto;
+  padding: 14px 24px;
+  display: flex; align-items: center; gap: 14px;
+}
+.logo { width: 44px; height: 44px; background: var(--accent); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.header-text h1 { color: #fff; font-size: 18px; font-weight: 700; }
+.header-text p { color: rgba(255,255,255,0.5); font-size: 12px; margin-top: 1px; }
+.hbadge { margin-right: auto; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); padding: 4px 12px; border-radius: 20px; font-size: 11px; border: 1px solid rgba(255,255,255,0.15); white-space: nowrap; }
+
+.rule-bar { background: #fff8e1; border-bottom: 2px solid var(--accent); }
+.rule-bar-inner { max-width: 1300px; margin: 0 auto; padding: 8px 24px; font-size: 12px; color: #7a5000; font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rule-bar-inner b { color: var(--accent); }
+
+/* Two-panel layout */
+.main-layout {
+  max-width: 1300px; margin: 0 auto;
+  padding: 20px 16px 40px;
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+/* Left panel */
+.left-panel { display: flex; flex-direction: column; gap: 16px; }
+
+.card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); overflow: hidden; }
+.card-header { padding: 16px 18px 12px; border-bottom: 1px solid var(--border); }
+.card-header h3 { font-size: 14px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 7px; }
+.card-header p { font-size: 11px; color: var(--muted); margin-top: 3px; }
+.card-body { padding: 14px 18px; }
+
+/* Branch buttons */
+.branch-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.bbtn {
+  background: var(--bg); border: 2px solid var(--border); border-radius: 10px;
+  padding: 10px 8px; cursor: pointer; text-align: center;
+  font-family: 'Cairo', sans-serif; transition: all 0.18s;
+}
+.bbtn:hover { border-color: var(--accent2); background: #eef6fa; transform: translateY(-1px); }
+.bbtn.active { background: var(--primary); border-color: var(--primary); color: white; }
+.bbtn .bi { font-size: 20px; margin-bottom: 4px; }
+.bbtn .bn { font-size: 12px; font-weight: 700; display: block; color: inherit; }
+.bbtn .bc { font-size: 10px; color: var(--muted); display: block; margin-top: 1px; }
+.bbtn.active .bc { color: rgba(255,255,255,0.5); }
+
+/* Address search */
+.addr-row { display: flex; gap: 8px; }
+.addr-row input {
+  flex: 1; padding: 10px 14px;
+  border: 2px solid var(--border); border-radius: 10px;
+  font-family: 'Cairo', sans-serif; font-size: 13px;
+  outline: none; direction: rtl; color: var(--text);
+  background: var(--bg); transition: border-color 0.2s;
+}
+.addr-row input:focus { border-color: var(--accent2); background: white; }
+.addr-row input::placeholder { color: var(--muted); }
+.btn-primary {
+  padding: 10px 16px; background: var(--accent2); color: white;
+  border: none; border-radius: 10px; font-family: 'Cairo', sans-serif;
+  font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: #1a7fa0; }
+
+/* Result box */
+.result-box {
+  border-radius: 10px; padding: 14px;
+  border: 2px solid var(--border);
+  background: var(--bg);
+  font-size: 13px;
+  display: none;
+}
+.result-box.show { display: block; }
+.result-box.covered { border-color: var(--green); background: var(--green-bg); }
+.result-box.out { border-color: var(--red); background: var(--red-bg); }
+.result-box .rb-title { font-weight: 700; font-size: 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.result-box.covered .rb-title { color: var(--green); }
+.result-box.out .rb-title { color: var(--red); }
+.result-box .rb-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.result-box .rb-row:last-child { margin-bottom: 0; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.08); margin-top: 8px; }
+.result-box .rb-label { color: var(--muted); font-size: 12px; }
+.result-box .rb-val { font-weight: 700; font-size: 13px; color: var(--primary); }
+.result-box .rb-fee { font-size: 18px; font-weight: 900; color: var(--green); }
+.result-box.out .rb-fee { color: var(--red); }
+
+/* Summary chips */
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+.chip-g { background: var(--green-bg); color: var(--green); }
+.chip-r { background: var(--red-bg); color: var(--red); }
+.chip-b { background: #eff6ff; color: #1d4ed8; }
+
+/* Map panel */
+.map-panel { position: sticky; top: 80px; }
+#map {
+  width: 100%; height: 600px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+
+/* Search panel below map */
+.search-panel { margin-top: 16px; }
+.search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.search-row input {
+  flex: 1; padding: 10px 14px;
+  border: 2px solid var(--border); border-radius: 10px;
+  font-family: 'Cairo', sans-serif; font-size: 13px;
+  outline: none; direction: rtl; color: var(--text); background: white;
+}
+.search-row input:focus { border-color: var(--accent2); }
+.search-row input::placeholder { color: var(--muted); }
+
+.filter-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.ftab {
+  padding: 5px 12px; border-radius: 8px; font-size: 11px; font-weight: 700;
+  cursor: pointer; border: 2px solid var(--border); background: white;
+  font-family: 'Cairo', sans-serif; transition: all 0.15s; color: var(--muted);
+}
+.ftab:hover { border-color: var(--accent2); color: var(--accent2); }
+.ftab.active { background: var(--accent2); color: white; border-color: var(--accent2); }
+
+.tbl-wrap { background: var(--card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; box-shadow: var(--shadow); }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+thead tr { background: var(--primary); color: white; }
+thead th { padding: 11px 14px; text-align: right; font-weight: 600; font-size: 11px; white-space: nowrap; }
+tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; cursor: pointer; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: #f0f6fc; }
+tbody td { padding: 10px 14px; vertical-align: middle; }
+.anar { font-weight: 600; color: var(--primary); font-size: 12.5px; }
+.anen { font-size: 10px; color: var(--muted); margin-top: 1px; }
+.tbadge { font-weight: 700; font-size: 11px; padding: 3px 8px; border-radius: 6px; white-space: nowrap; }
+.no-res { text-align: center; padding: 32px; color: var(--muted); font-size: 14px; }
+
+@media(max-width: 900px) {
+  .main-layout { grid-template-columns: 1fr; }
+  .map-panel { position: static; }
+  #map { height: 420px; }
+}
+@media(max-width: 500px) {
+  .branch-grid { grid-template-columns: repeat(2, 1fr); }
+  thead th:nth-child(3), tbody td:nth-child(3) { display: none; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">🚚</div>
+    <div class="header-text">
+      <h1>نظام مناطق التوصيل — Crinkle</h1>
+      <p>7 فروع — أكتوبر · شيراتون · طلعت حرب · عباس العقاد · التجمع الأول · التجمع الخامس · مول العرب</p>
+    </div>
+    <div class="hbadge">🗺️ مدعوم بـ Google Maps</div>
+  </div>
+</header>
+
+<div class="rule-bar">
+  <div class="rule-bar-inner">
+    ⚠️ حد التوصيل: <b>10 كم</b> من الفرع لجميع الفروع &nbsp;|&nbsp; 💰 سعر التوصيل: <b>5 جنيه × عدد الكيلومترات</b> &nbsp;|&nbsp; 🗺️ الدائرة الخضراء = نطاق التوصيل
+  </div>
+</div>
+
+<div class="main-layout">
+
+  <!-- ── LEFT PANEL ─────────────────────────────────────── -->
+  <div class="left-panel">
+
+    <!-- Branch selector -->
+    <div class="card">
+      <div class="card-header">
+        <h3>🏪 اختر الفرع</h3>
+        <p>كل فرع له نقطة مرجعية مختلفة على الخريطة</p>
+      </div>
+      <div class="card-body">
+        <div class="branch-grid" id="branchGrid"></div>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="card" id="summaryCard" style="display:none">
+      <div class="card-header">
+        <h3>📊 ملخص الفرع المختار</h3>
+      </div>
+      <div class="card-body">
+        <div class="chips" id="summaryChips"></div>
+        <div style="margin-top:12px;font-size:12px;color:var(--muted);line-height:1.7" id="priceNote"></div>
+      </div>
+    </div>
+
+    <!-- Address checker -->
+    <div class="card">
+      <div class="card-header">
+        <h3>🔍 تحقق من عنوان معين</h3>
+        <p>أدخل عنواناً لحساب المسافة ورسوم التوصيل تلقائياً</p>
+      </div>
+      <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+        <div class="addr-row">
+          <input type="text" id="addrInput" placeholder="مثال: مدينة نصر، القاهرة..." />
+          <button class="btn-primary" onclick="checkAddress()">احسب</button>
+        </div>
+        <div class="result-box" id="resultBox"></div>
+      </div>
+    </div>
+
+  </div><!-- end left panel -->
+
+  <!-- ── RIGHT PANEL (MAP + TABLE) ─────────────────────── -->
+  <div class="map-panel">
+    <div id="map"></div>
+
+    <div class="search-panel card" style="overflow:visible">
+      <div style="padding:14px 18px 10px;border-bottom:1px solid var(--border)">
+        <div style="font-size:14px;font-weight:700;color:var(--primary);margin-bottom:10px">📋 قائمة المناطق</div>
+        <div class="search-row">
+          <input type="text" id="tableSearch" placeholder="ابحث عن منطقة..." oninput="filterTable()" />
+        </div>
+        <div class="filter-row">
+          <div class="ftab active" onclick="setFilter('all',this)">الكل</div>
+          <div class="ftab" onclick="setFilter('covered',this)">✅ ضمن النطاق</div>
+          <div class="ftab" onclick="setFilter('out',this)">❌ خارج النطاق</div>
+        </div>
+        <div style="font-size:11px;color:var(--muted)">انقر على أي منطقة لإظهارها على الخريطة</div>
+      </div>
+      <div class="tbl-wrap" style="border-radius:0;border:none;box-shadow:none;max-height:400px;overflow-y:auto">
+        <table>
+          <thead><tr>
+            <th>#</th><th>المنطقة</th><th>المسافة</th>
+            <th>رسوم التوصيل</th><th>الحالة</th>
+          </tr></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+        <div class="no-res" id="noRes" style="display:none">لا توجد نتائج</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end main-layout -->
+
+<!-- Google Maps -->
+<script>
+const BRANCHES = [
+  {k:'OCT',ar:'أكتوبر',      en:'6th October',              ic:'🏗️', lat:29.9696,    lng:30.9408,    addr:'المحور المركزي 95، مدينة 6 أكتوبر',                       radius:10},
+  {k:'SHR',ar:'شيراتون',     en:'Sheraton (CFC)',            ic:'✈️', lat:30.0988,    lng:31.3713,    addr:'39XC+FHW، شيراتون المطار، النزهة، القاهرة',                 radius:10},
+  {k:'TLT',ar:'طلعت حرب',    en:'Talaat Harb',               ic:'🕌', lat:30.0466,    lng:31.2349,    addr:'26WM+JXM، طلعت حرب، وسط البلد، القاهرة',                   radius:10},
+  {k:'ABB',ar:'عباس العقاد', en:'Abbas El Akkad - Levels',  ic:'🦅', lat:30.0517304, lng:31.3382381, addr:'Levels Mall، الحديقة الدولية، مدينة نصر، القاهرة',          radius:10},
+  {k:'TGM',ar:'التجمع الأول',en:'Tagamo3 1st - Hazard Mall', ic:'🏘️', lat:30.0629,    lng:31.4466,    addr:'Hazard Mall، محور مصطفى كامل، القاهرة الجديدة',             radius:10},
+  {k:'TG5',ar:'التجمع الخامس',en:'Tagamo3 5th',              ic:'🏙️', lat:30.0037,    lng:31.4246,    addr:'التجمع الخامس، القاهرة الجديدة',                           radius:10},
+  {k:'MOA',ar:'مول العرب',   en:'Mall of Arabia',            ic:'🛍️', lat:30.0065859, lng:30.9753955, addr:'مول العرب، مدينة السادس من أكتوبر، الجيزة',                radius:10},
+];
+
+// All areas with precise lat/lng coords
+const AREAS = [
+  // ── OCT ─────────────────────────────────────────────────
+  {k:'OCT',ar:'الحي المتميز',en:'El Hay El Motamyez',lat:29.978,lng:30.952},
+  {k:'OCT',ar:'٦ أكتوبر - المدينة التعليمية',en:'6th Oct - Educational City',lat:29.980,lng:30.940},
+  {k:'OCT',ar:'شارع بوليفارد - الحزام الأخضر - جراند هايتس',en:'Boulevard - Grand Heights',lat:29.989,lng:30.886},
+  {k:'OCT',ar:'السادس من أكتوبر - إسكان الشباب',en:'6th Oct - Eskan El Shabab',lat:29.985,lng:30.960},
+  {k:'OCT',ar:'السادس من أكتوبر - الحي الحادي عشر',en:'6th Oct - 11th District',lat:29.983,lng:30.975},
+  {k:'OCT',ar:'السادس من أكتوبر - الحي السادس',en:'6th Oct - 6th District',lat:29.974,lng:30.957},
+  {k:'OCT',ar:'السادس من أكتوبر - غرب سوميد',en:'6th Oct - West Somed',lat:29.970,lng:30.949},
+  {k:'OCT',ar:'السادس من أكتوبر - ماونتن فيو ١',en:'6th Oct - Mountain View 1',lat:29.976,lng:30.965},
+  {k:'OCT',ar:'السادس من أكتوبر - البشائر',en:'6th Oct - El Bashayer',lat:29.972,lng:30.960},
+  {k:'OCT',ar:'السادس من أكتوبر - واحة المهندسين',en:'6th Oct - Wahet El Mohandsen',lat:29.973,lng:30.962},
+  {k:'OCT',ar:'السادس من أكتوبر - طيبة جاردنز',en:'6th Oct - Teba Gardens',lat:29.971,lng:30.961},
+  {k:'OCT',ar:'السادس من أكتوبر - الحي العاشر',en:'6th Oct - 10th District',lat:29.985,lng:30.971},
+  {k:'OCT',ar:'السادس من أكتوبر - الحي السابع',en:'6th Oct - 7th District',lat:29.977,lng:30.969},
+  {k:'OCT',ar:'السادس من أكتوبر - الحي الثامن',en:'6th Oct - 8th District',lat:29.980,lng:30.974},
+  {k:'OCT',ar:'السادس من أكتوبر - الحي الخامس',en:'6th Oct - 5th District',lat:29.968,lng:30.952},
+  {k:'OCT',ar:'السادس من أكتوبر - الحي الرابع',en:'6th Oct - 4th District',lat:29.964,lng:30.944},
+  {k:'OCT',ar:'السادس من أكتوبر - الحي الثالث',en:'6th Oct - 3rd District',lat:29.961,lng:30.937},
+  {k:'OCT',ar:'السادس من أكتوبر - الحي الثاني',en:'6th Oct - 2nd District',lat:29.958,lng:30.929},
+  {k:'OCT',ar:'السادس من أكتوبر - الحي الأول',en:'6th Oct - 1st District',lat:29.955,lng:30.921},
+  {k:'OCT',ar:'السادس من أكتوبر - منطقة ص',en:'6th Oct - Section S',lat:29.961,lng:30.948},
+  {k:'OCT',ar:'السادس من أكتوبر - إسكان الشباب ٢',en:'6th Oct - Eskan El Shabab 2',lat:29.984,lng:30.962},
+  {k:'OCT',ar:'٦ أكتوبر - إسكان جامعة القاهرة',en:'6th Oct - Eskan Gamaet El Qahera',lat:29.943,lng:30.870},
+  {k:'OCT',ar:'٦ أكتوبر - دريم لاند',en:'6th Oct - Dream Land',lat:30.025,lng:30.872},
+  {k:'OCT',ar:'٦ أكتوبر - بالم هيلز',en:'6th Oct - Palm Hills',lat:30.016,lng:30.864},
+  {k:'OCT',ar:'الشيخ زايد - جامعة النيل',en:'El Sheikh Zayed - Nile University',lat:30.030,lng:30.968},
+  {k:'OCT',ar:'الشيخ زايد - الحي الرابع / السابع',en:'El Sheikh Zayed - El Hay 4/7',lat:30.018,lng:30.952},
+  {k:'OCT',ar:'نيو جيزة - وسط المدينة',en:'New Giza - Downtown',lat:30.035,lng:30.842},
+  {k:'OCT',ar:'الشيخ زايد - بيفرلي هيلز',en:'El Sheikh Zayed - Beverly Hills',lat:30.037,lng:30.983},
+  {k:'OCT',ar:'حدائق الأهرام - منطقة و - هـ',en:'Hadayek El Ahram - Area W-H',lat:29.892,lng:30.857},
+  // ── SHR ─────────────────────────────────────────────────
+  {k:'SHR',ar:'شيراتون - مساكن شيراتون - صن سيتي',en:'Sheraton - Sun City',lat:30.103,lng:31.390},
+  {k:'SHR',ar:'مساكن شيراتون - صقر قريش',en:'Masaken Sheraton - Saqr Qorish',lat:30.097,lng:31.375},
+  {k:'SHR',ar:'شيراتون - الأكاديمية البحرية',en:'Sheraton - Acamdeya Bahria',lat:30.096,lng:31.373},
+  {k:'SHR',ar:'شيراتون - فيرمونت هليوبوليس',en:'Sheraton - Fairmont Heliopolis',lat:30.094,lng:31.371},
+  {k:'SHR',ar:'هليوبوليس - ميدان الحجاز',en:'Heliopolis - Hegaz Square',lat:30.083,lng:31.322},
+  {k:'SHR',ar:'مساكن شيراتون - شيراتون الأوتوستراد',en:'Masaken Sheraton - Autostrad',lat:30.097,lng:31.366},
+  {k:'SHR',ar:'مطار ألماظة',en:'AlMaza Airport',lat:30.097,lng:31.360},
+  {k:'SHR',ar:'أرض الجولف 2',en:'Ard El Golf 2',lat:30.074,lng:31.310},
+  {k:'SHR',ar:'مدينة نصر - عمارات التوفيق',en:'Nasr City - Omarat El Tawfiq',lat:30.068,lng:31.305},
+  {k:'SHR',ar:'أرض الجولف',en:'Ard El Golf',lat:30.072,lng:31.307},
+  {k:'SHR',ar:'هليوبوليس - السبع عمارات',en:'Heliopolis - El Sabaa Omarat',lat:30.079,lng:31.314},
+  {k:'SHR',ar:'الحرية - هليوبوليس',en:'El-Horeya Heliopolis',lat:30.081,lng:31.318},
+  {k:'SHR',ar:'الماظة - هليوبوليس',en:'Almazah Heliopolis',lat:30.091,lng:31.342},
+  {k:'SHR',ar:'العروبة - هليوبوليس - ميدان تريمف',en:'Heliopolis - Triumph Square',lat:30.087,lng:31.328},
+  {k:'SHR',ar:'عين شمس - منشية التحرير',en:'Ain Shams - Manshyt El Tahrir',lat:30.103,lng:31.331},
+  {k:'SHR',ar:'الزيتون - الشرقية',en:'El Zaitoun - Al Sharqeya',lat:30.075,lng:31.288},
+  {k:'SHR',ar:'هليوبوليس - الميريلاند',en:'Heliopolis - Merryland',lat:30.078,lng:31.299},
+  {k:'SHR',ar:'هليوبوليس - الخليفة المأمون',en:"Heliopolis - El Khalifa El Maa'moun",lat:30.083,lng:31.324},
+  {k:'SHR',ar:'هليوبوليس - المقريزي',en:'Heliopolis - Maqreezi',lat:30.079,lng:31.309},
+  {k:'SHR',ar:'هليوبوليس - الكوربة - ميدان الإسماعيلية',en:'Heliopolis - Korba',lat:30.085,lng:31.323},
+  {k:'SHR',ar:'شارع جوزيف تيتو - النزهة الجديدة',en:'Joseph Tito St - New Nozha',lat:30.106,lng:31.352},
+  // ── TLT ─────────────────────────────────────────────────
+  {k:'TLT',ar:'وسط البلد - التحرير',en:'Downtown - Tahrir',lat:30.044,lng:31.235},
+  {k:'TLT',ar:'جاردن سيتي',en:'Garden City',lat:30.038,lng:31.231},
+  {k:'TLT',ar:'الزمالك',en:'Zamalek',lat:30.059,lng:31.220},
+  {k:'TLT',ar:'المهندسين - جزيرة العرب',en:'Mohandessin - Jazerat El Arab',lat:30.058,lng:31.200},
+  {k:'TLT',ar:'الدقي - المساحة',en:'Dokki - El Mesaha',lat:30.046,lng:31.213},
+  {k:'TLT',ar:'الدقي - شارع الدقي',en:'Dokki - El Dokki Street',lat:30.042,lng:31.209},
+  {k:'TLT',ar:'المهندسين - ميدان لبنان',en:'Mohandessin - Lebanon Square',lat:30.057,lng:31.195},
+  {k:'TLT',ar:'العجوزة - ميدان الثورة',en:'Agouza - El Thawra Square',lat:30.055,lng:31.218},
+  {k:'TLT',ar:'ميدان الجيزة - مراد',en:'Giza Square - Mourad',lat:30.004,lng:31.212},
+  {k:'TLT',ar:'بولاق - إمبابة',en:'Boulak - Imbaba',lat:30.066,lng:31.215},
+  // ── ABB ─────────────────────────────────────────────────
+  {k:'ABB',ar:'مدينة نصر - الزهراء',en:'Nasr City - Zahraa',lat:30.064,lng:31.329},
+  {k:'ABB',ar:'مدينة نصر - الحي العاشر',en:'Nasr City - Hay 10',lat:30.059,lng:31.349},
+  {k:'ABB',ar:'مدينة نصر - الحي الثامن',en:'Nasr City - Hay 8',lat:30.065,lng:31.344},
+  {k:'ABB',ar:'مدينة نصر - مدينة الواحة',en:'Nasr City - Madinet El Waha',lat:30.053,lng:31.360},
+  {k:'ABB',ar:'مدينة نصر - مساكن الشروق',en:'Nasr City - Masaken El Shorouk',lat:30.062,lng:31.337},
+  {k:'ABB',ar:'مدينة نصر - حي السفارات',en:'Nasr City - Hay El Sefarat',lat:30.071,lng:31.335},
+  {k:'ABB',ar:'مدينة نصر - إستاد القاهرة',en:'Nasr City - Cairo Stadium',lat:30.060,lng:31.282},
+  {k:'ABB',ar:'مدينة نصر - جامعة الأزهر',en:'Nasr City - Azhar University',lat:30.057,lng:31.316},
+  {k:'ABB',ar:'مدينة نصر - الماسة',en:'Nasr City - El Masah',lat:30.065,lng:31.321},
+  {k:'ABB',ar:'مدينة نصر - الطيران - عباس العقاد',en:'Nasr City - Abbas El Akkad',lat:30.066,lng:31.340},
+  {k:'ABB',ar:'مدينة نصر - مكرم عبيد',en:'Nasr City - Makram Ebeid',lat:30.055,lng:31.343},
+  {k:'ABB',ar:'مدينة نصر - أحمد فخري',en:'Nasr City - Ahmed Fakhry',lat:30.057,lng:31.346},
+  {k:'ABB',ar:'مدينة نصر - السراج مول',en:'Nasr City - El Serag Mall',lat:30.064,lng:31.330},
+  {k:'ABB',ar:'مدينة نصر - الحديقة الدولية',en:'Nasr City - El Hadeeqa El Dawlia',lat:30.069,lng:31.336},
+  {k:'ABB',ar:'مدينة نصر - الحي السابع',en:'Nasr City - Hay 7',lat:30.068,lng:31.327},
+  {k:'ABB',ar:'مدينة نصر - يوسف عباس',en:'Nasr City - Youssef Abbas',lat:30.062,lng:31.360},
+  {k:'ABB',ar:'مدينة نصر - الوفاء والأمل',en:'Nasr City - El Wafaa W El Amal',lat:30.053,lng:31.370},
+  {k:'ABB',ar:'المقطم - الهضبة الوسطى',en:'Mokattam - El Hadba El Wosta',lat:30.022,lng:31.351},
+  {k:'ABB',ar:'تاج سيتي',en:'Taj City',lat:30.091,lng:31.382},
+  // ── TGM ─────────────────────────────────────────────────
+  {k:'TGM',ar:'التجمع الأول - سوان ليك',en:'Tagammoa 1 - Swan Lake',lat:30.058,lng:31.440},
+  {k:'TGM',ar:'التجمع الأول - إسكان الشباب',en:'Tagammoa 1 - Eskan El Shabab',lat:30.055,lng:31.436},
+  {k:'TGM',ar:'التجمع الأول - ميراج سيتي',en:'Tagammoa 1 - Mirage City',lat:30.053,lng:31.431},
+  {k:'TGM',ar:'التجمع الأول - النخيل',en:'Tagammoa 1 - El Nakhil',lat:30.049,lng:31.425},
+  {k:'TGM',ar:'التجمع الأول - شرق الاكادمية',en:'Tagammoa 1 - Sharq El Academya',lat:30.048,lng:31.430},
+  {k:'TGM',ar:'التجمع الخامس - الياسمين 1',en:'Tagammoa 5 - El Yasmeen 1',lat:30.031,lng:31.425},
+  {k:'TGM',ar:'التجمع الخامس - الياسمين 2',en:'Tagammoa 5 - El Yasmeen 2',lat:30.028,lng:31.422},
+  {k:'TGM',ar:'التجمع الخامس - الياسمين 3',en:'Tagammoa 5 - El Yasmeen 3',lat:30.033,lng:31.428},
+  {k:'TGM',ar:'التجمع الخامس - الياسمين 4',en:'Tagammoa 5 - El Yasmeen 4',lat:30.030,lng:31.424},
+  {k:'TGM',ar:'التجمع الخامس - الياسمين 5',en:'Tagammoa 5 - El Yasmeen 5',lat:30.035,lng:31.430},
+  {k:'TGM',ar:'التجمع الخامس - الياسمين 6',en:'Tagammoa 5 - El Yasmeen 6',lat:30.032,lng:31.426},
+  {k:'TGM',ar:'التجمع الخامس - الياسمين 7',en:'Tagammoa 5 - El Yasmeen 7',lat:30.036,lng:31.432},
+  {k:'TGM',ar:'التجمع الخامس - الياسمين 8',en:'Tagammoa 5 - El Yasmeen 8',lat:30.033,lng:31.427},
+  {k:'TGM',ar:'التجمع الخامس البنفسج 1-2-3-4',en:'Tagammoa 5 - Banafseg 1-4',lat:30.038,lng:31.435},
+  {k:'TGM',ar:'التجمع الخامس - البنفسج 5-6-7-8',en:'Tagammoa 5 - Banafseg 5-8',lat:30.041,lng:31.438},
+  {k:'TGM',ar:'التجمع الخامس - البنفسج 9-10-11-12',en:'Tagammoa 5 - Banafseg 9-12',lat:30.044,lng:31.441},
+  {k:'TGM',ar:'التجمع الخامس - عمارات البنفسج',en:'Tagammoa 5 - El Banafseg Buildings',lat:30.042,lng:31.439},
+  {k:'TGM',ar:'التجمع الخامس - جنوب الأكاديمية',en:'Tagammoa 5 - Ganoub El Academeya',lat:30.020,lng:31.430},
+  {k:'TGM',ar:'التجمع الخامس - ليك فيو',en:'Tagammoa 5 - Lake View',lat:30.025,lng:31.434},
+  {k:'TGM',ar:'التجمع الخامس - كايرو فيسيفال سيتي',en:'Tagammoa 5 - Cairo Festival City',lat:30.028,lng:31.415},
+  {k:'TGM',ar:'التجمع الخامس - المستثمرين الشمالية',en:'Tagammoa 5 - North Investors',lat:30.048,lng:31.448},
+  {k:'TGM',ar:'كمبوند الديار - النرجس 5/6/7/8',en:'Al Diyar Compound - Al Narges 5/6/7/8',lat:30.052,lng:31.452},
+  {k:'TGM',ar:'بالم هيلز نادي قطامية',en:'Palm Hills Katameya Club',lat:30.018,lng:31.418},
+  {k:'TGM',ar:'التجمع الخامس - ابو الهول',en:'Tagammoa 5 - Abo AL Houl',lat:29.988,lng:31.522},
+  {k:'TGM',ar:'التجمع الخامس - الحي 1',en:'Tagammoa 5 - Hay 1',lat:30.005,lng:31.497},
+  {k:'TGM',ar:'التجمع الخامس - الحي 3',en:'Tagammoa 5 - Hay 3',lat:29.998,lng:31.502},
+  {k:'TGM',ar:'مدينة الرحاب - 2',en:'El Rehab City 2',lat:30.065,lng:31.496},
+  {k:'TGM',ar:'مدينتى - نادى الجولف',en:'Madinaty - Golf Club',lat:30.082,lng:31.552},
+  // ── TG5 ─────────────────────────────────────────────────
+  {k:'TG5',ar:'التجمع الخامس - الياسمين 1',en:'Tagammoa 5 - El Yasmeen 1',lat:30.031,lng:31.425},
+  {k:'TG5',ar:'التجمع الخامس - الياسمين 2',en:'Tagammoa 5 - El Yasmeen 2',lat:30.028,lng:31.422},
+  {k:'TG5',ar:'التجمع الخامس - الياسمين 3',en:'Tagammoa 5 - El Yasmeen 3',lat:30.033,lng:31.428},
+  {k:'TG5',ar:'التجمع الخامس - الياسمين 4',en:'Tagammoa 5 - El Yasmeen 4',lat:30.030,lng:31.424},
+  {k:'TG5',ar:'التجمع الخامس - الياسمين 5',en:'Tagammoa 5 - El Yasmeen 5',lat:30.035,lng:31.430},
+  {k:'TG5',ar:'التجمع الخامس - الياسمين 6',en:'Tagammoa 5 - El Yasmeen 6',lat:30.032,lng:31.426},
+  {k:'TG5',ar:'التجمع الخامس - الياسمين 7',en:'Tagammoa 5 - El Yasmeen 7',lat:30.036,lng:31.432},
+  {k:'TG5',ar:'التجمع الخامس - الياسمين 8',en:'Tagammoa 5 - El Yasmeen 8',lat:30.033,lng:31.427},
+  {k:'TG5',ar:'التجمع الخامس البنفسج 1-2-3-4',en:'Tagammoa 5 - Banafseg 1-4',lat:30.038,lng:31.435},
+  {k:'TG5',ar:'التجمع الخامس - البنفسج 5-6-7-8',en:'Tagammoa 5 - Banafseg 5-8',lat:30.041,lng:31.438},
+  {k:'TG5',ar:'التجمع الخامس - البنفسج 9-10-11-12',en:'Tagammoa 5 - Banafseg 9-12',lat:30.044,lng:31.441},
+  {k:'TG5',ar:'التجمع الخامس - عمارات البنفسج',en:'Tagammoa 5 - El Banafseg Buildings',lat:30.042,lng:31.439},
+  {k:'TG5',ar:'التجمع الخامس - جنوب الأكاديمية',en:'Tagammoa 5 - Ganoub El Academeya',lat:30.020,lng:31.430},
+  {k:'TG5',ar:'التجمع الخامس - ليك فيو',en:'Tagammoa 5 - Lake View',lat:30.025,lng:31.434},
+  {k:'TG5',ar:'التجمع الخامس - كايرو فيسيفال سيتي',en:'Tagammoa 5 - Cairo Festival City',lat:30.028,lng:31.415},
+  {k:'TG5',ar:'التجمع الخامس - المستثمرين الشمالية',en:'Tagammoa 5 - North Investors',lat:30.048,lng:31.448},
+  {k:'TG5',ar:'التجمع الخامس - المستثمرين الشمالية - 2',en:'Tagammoa 5 - North Investors-2',lat:30.049,lng:31.449},
+  {k:'TG5',ar:'التجمع الخامس - المستثمرين الشمالية الإكستينشن',en:'Tagammoa 5 - North Investors Ext',lat:30.050,lng:31.451},
+  {k:'TG5',ar:'كمبوند الديار - النرجس 5/6/7/8',en:'Al Diyar - Al Narges 5/6/7/8',lat:30.052,lng:31.452},
+  {k:'TG5',ar:'بالم هيلز نادي قطامية',en:'Palm Hills Katameya Club',lat:30.018,lng:31.418},
+  {k:'TG5',ar:'بالم هيلز قطامية الإكستينشن - المربع الخامس - كمبوند ليان',en:'Palm Hills Katameya Ext - Layan',lat:30.015,lng:31.412},
+  {k:'TG5',ar:'التجمع الخامس - مجمع البنوك',en:'Tagammoa 5 - Banks Center',lat:30.026,lng:31.452},
+  {k:'TG5',ar:'التجمع الخامس - شارع ٩٠ الشركات',en:'Tagammoa 5 - 90 St Companies',lat:30.025,lng:31.448},
+  {k:'TG5',ar:'التجمع الخامس - الجامعة الامريكية (AUC)',en:'Tagammoa 5 - AUC',lat:30.020,lng:31.499},
+  {k:'TG5',ar:'التجمع الخامس - الشويفات',en:'Tagammoa 5 - El Showifat',lat:30.010,lng:31.447},
+  {k:'TG5',ar:'التجمع الخامس - الحي 1',en:'Tagammoa 5 - Hay 1',lat:30.005,lng:31.497},
+  {k:'TG5',ar:'التجمع الخامس - الحي 2',en:'Tagammoa 5 - Hay 2',lat:30.007,lng:31.500},
+  {k:'TG5',ar:'التجمع الخامس - الحي 3',en:'Tagammoa 5 - Hay 3',lat:29.998,lng:31.502},
+  {k:'TG5',ar:'التجمع الخامس - الحي 4',en:'Tagammoa 5 - Hay 4',lat:30.004,lng:31.507},
+  {k:'TG5',ar:'التجمع الخامس - الحي 5',en:'Tagammoa 5 - Hay 5',lat:30.009,lng:31.497},
+  {k:'TG5',ar:'القطامية',en:'El Katameya',lat:29.970,lng:31.440},
+  {k:'TG5',ar:'مدينة الرحاب - 2',en:'El Rehab City 2',lat:30.065,lng:31.496},
+  {k:'TG5',ar:'التجمع الخامس - سوديك',en:'Tagammoa 5 - Sodic',lat:30.038,lng:31.438},
+  {k:'TG5',ar:'هايد بارك القاهرة الجديدة',en:'Hyde Park New Cairo',lat:30.045,lng:31.450},
+  {k:'TG5',ar:'مدينة الرحاب 1',en:'Rehab City 1',lat:30.060,lng:31.490},
+  {k:'TG5',ar:'مدينتى - نادى الجولف',en:'Madinaty - Golf Club',lat:30.082,lng:31.552},
+  // ── MOA ─────────────────────────────────────────────────
+  {k:'MOA',ar:'السادس من أكتوبر - الحي الأول',en:'6th Oct - 1st District',lat:29.955,lng:30.921},
+  {k:'MOA',ar:'السادس من أكتوبر - الحي الثاني',en:'6th Oct - 2nd District',lat:29.958,lng:30.929},
+  {k:'MOA',ar:'السادس من أكتوبر - الحي الثالث',en:'6th Oct - 3rd District',lat:29.961,lng:30.937},
+  {k:'MOA',ar:'السادس من أكتوبر - الحي الرابع',en:'6th Oct - 4th District',lat:29.964,lng:30.944},
+  {k:'MOA',ar:'السادس من أكتوبر - الحي الخامس',en:'6th Oct - 5th District',lat:29.968,lng:30.952},
+  {k:'MOA',ar:'السادس من أكتوبر - الحي السادس',en:'6th Oct - 6th District',lat:29.972,lng:30.957},
+  {k:'MOA',ar:'السادس من أكتوبر - الحي السابع',en:'6th Oct - 7th District',lat:29.977,lng:30.969},
+  {k:'MOA',ar:'السادس من أكتوبر - الحي الثامن',en:'6th Oct - 8th District',lat:29.980,lng:30.974},
+  {k:'MOA',ar:'السادس من أكتوبر - الحي التاسع',en:'6th Oct - 9th District',lat:29.984,lng:30.984},
+  {k:'MOA',ar:'السادس من أكتوبر - الحي العاشر',en:'6th Oct - 10th District',lat:29.985,lng:30.971},
+  {k:'MOA',ar:'السادس من أكتوبر - الحي الحادي عشر',en:'6th Oct - 11th District',lat:29.983,lng:30.975},
+  {k:'MOA',ar:'السادس من أكتوبر - غرب سوميد',en:'6th Oct - West Somed',lat:29.970,lng:30.949},
+  {k:'MOA',ar:'السادس من أكتوبر - إسكان الشباب',en:'6th Oct - Eskan El Shabab',lat:29.985,lng:30.960},
+  {k:'MOA',ar:'السادس من أكتوبر - البشائر',en:'6th Oct - El Bashayer',lat:29.972,lng:30.960},
+  {k:'MOA',ar:'السادس من أكتوبر - واحة المهندسين',en:'6th Oct - Wahet El Mohandsen',lat:29.973,lng:30.962},
+  {k:'MOA',ar:'السادس من أكتوبر - طيبة جاردنز',en:'6th Oct - Teba Gardens',lat:29.971,lng:30.961},
+  {k:'MOA',ar:'السادس من أكتوبر - ماونتن فيو ١',en:'6th Oct - Mountain View 1',lat:29.976,lng:30.965},
+  {k:'MOA',ar:'٦ أكتوبر - المدينة التعليمية',en:'6th Oct - Educational City',lat:29.980,lng:30.940},
+  {k:'MOA',ar:'شارع بوليفارد - الحزام الأخضر - جراند هايتس',en:'Boulevard - Grand Heights',lat:29.989,lng:30.886},
+  {k:'MOA',ar:'الشيخ زايد - الحي السادس عشر - البستان',en:'El Sheikh Zayed - El Hay 16 Al Bostan',lat:29.995,lng:30.938},
+  {k:'MOA',ar:'الشيخ زايد - النهضة',en:'El Sheikh Zayed - El Nahda',lat:30.005,lng:30.943},
+  {k:'MOA',ar:'الشيخ زايد - الحي الثامن',en:'El Sheikh Zayed - El Hay 8',lat:30.015,lng:30.958},
+  {k:'MOA',ar:'الشيخ زايد - جامعة النيل',en:'El Sheikh Zayed - Nile University',lat:30.030,lng:30.968},
+  {k:'MOA',ar:'السادس من أكتوبر - ماونتن فيو',en:'6th Oct - Mountain View',lat:30.010,lng:30.893},
+  {k:'MOA',ar:'٦ أكتوبر - دريم لاند',en:'6th Oct - Dream Land',lat:30.025,lng:30.872},
+  {k:'MOA',ar:'نيو جيزة - وسط المدينة',en:'New Giza - Downtown',lat:30.035,lng:30.842},
+  {k:'MOA',ar:'٦ أكتوبر - مسجد الشرطة',en:'6th Oct - Masged El Shorta',lat:29.992,lng:30.963},
+  {k:'MOA',ar:'٦ أكتوبر - كارما سيتي',en:'6th Oct - Karma City',lat:30.005,lng:30.880},
+];
+
+// ── Distance Matrix cache: key = "branchKey|areaIndex" ──────────────────────
+// We use Distance Matrix API for ALL distances — accurate driving distances
+const dmCache = {}; // "OCT|0" -> {km, dur}
+const RATE = 5;
+
+let selBranch = null, activeFilter = 'all';
+let map, branchMarker, circleOverlay, infoWindow, areaMarkers = [];
+
+// ── INIT ─────────────────────────────────────────────────
+function initMap() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: {lat: 30.02, lng: 31.20}, zoom: 10,
+    mapTypeControl: false, streetViewControl: false,
+    fullscreenControlOptions: {position: google.maps.ControlPosition.LEFT_TOP},
+    styles: [{featureType:'poi', stylers:[{visibility:'off'}]}]
+  });
+  infoWindow = new google.maps.InfoWindow();
+  renderBranches();       // render buttons AFTER map is ready
+  selectBranch('OCT');    // default branch
+}
+
+// ── BRANCHES ─────────────────────────────────────────────
+function renderBranches() {
+  document.getElementById('branchGrid').innerHTML = BRANCHES.map(b => `
+    <button class="bbtn ${selBranch===b.k?'active':''}" onclick="selectBranch('${b.k}')">
+      <div class="bi">${b.ic}</div><span class="bn">${b.ar}</span><span class="bc">${b.en}</span>
+    </button>`).join('');
+}
+
+function selectBranch(k) {
+  selBranch = k; activeFilter = 'all';
+  document.getElementById('tableSearch').value = '';
+  document.querySelectorAll('.ftab').forEach((t,i) => t.classList.toggle('active', i===0));
+  renderBranches();
+  updateMap();
+  loadDistances(k);
+}
+
+// ── DISTANCE MATRIX (batch, cached) ──────────────────────
+function loadDistances(k) {
+  const b      = BRANCHES.find(b => b.k === k);
+  const areas  = AREAS.filter(a => a.k === k);
+
+  // Show loading state immediately
+  showLoading(b, areas.length);
+
+  const uncached = areas.filter((a, i) => !(k+'|'+i in dmCache));
+  if (!uncached.length) { renderSummary(); renderTable(); return; }
+
+  const origin  = {lat: b.lat, lng: b.lng};
+  const BATCH   = 25;
+  let done      = 0;
+
+  for (let i = 0; i < uncached.length; i += BATCH) {
+    const chunk    = uncached.slice(i, i + BATCH);
+    const dests    = chunk.map(a => ({lat: a.lat, lng: a.lng}));
+    const indices  = chunk.map(a => areas.indexOf(a)); // original indices
+
+    new google.maps.DistanceMatrixService().getDistanceMatrix({
+      origins: [origin], destinations: dests,
+      travelMode: google.maps.TravelMode.DRIVING,
+      unitSystem: google.maps.UnitSystem.METRIC,
+    }, (resp, status) => {
+      done += chunk.length;
+      if (status === 'OK') {
+        chunk.forEach((area, ci) => {
+          const el  = resp.rows[0].elements[ci];
+          const key = k + '|' + indices[ci];
+          if (el.status === 'OK') {
+            dmCache[key] = {km: +(el.distance.value/1000).toFixed(1), dur: el.duration.text};
+          } else {
+            dmCache[key] = null;
+          }
+        });
+      } else {
+        chunk.forEach((area, ci) => { dmCache[k+'|'+indices[ci]] = null; });
+      }
+      if (done >= uncached.length && k === selBranch) {
+        renderSummary();
+        renderTable();
+        refreshMarkers(k);
+      }
+    });
+  }
+}
+
+function showLoading(b, count) {
+  document.getElementById('summaryCard').style.display = 'block';
+  document.getElementById('summaryChips').innerHTML =
+    `<span class="chip chip-b">⏳ جاري حساب ${count} منطقة...</span>`;
+  document.getElementById('priceNote').innerHTML =
+    `<span style="color:var(--primary);font-weight:700">📍 ${b.addr}</span>`;
+  document.getElementById('tableBody').innerHTML =
+    `<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--muted)">
+      ⏳ جاري حساب المسافات الحقيقية من Google Maps...
+    </td></tr>`;
+  document.getElementById('noRes').style.display = 'none';
+}
+
+// ── SUMMARY ──────────────────────────────────────────────
+function renderSummary() {
+  if (!selBranch) return;
+  const b     = BRANCHES.find(b => b.k === selBranch);
+  const areas = AREAS.filter(a => a.k === selBranch);
+  let cov = 0, outN = 0, minF = Infinity, maxF = 0;
+  areas.forEach((a, i) => {
+    const c = dmCache[selBranch+'|'+i];
+    if (!c) return;
+    if (c.km <= b.radius) { cov++; minF = Math.min(minF, c.km); maxF = Math.max(maxF, c.km); }
+    else outN++;
+  });
+  const pending = areas.filter((a,i) => !(selBranch+'|'+i in dmCache)).length;
+  document.getElementById('summaryChips').innerHTML = `
+    <span class="chip chip-b">📍 ${areas.length} منطقة</span>
+    <span class="chip chip-g">✅ ${cov} ضمن النطاق</span>
+    <span class="chip chip-r">❌ ${outN} خارج النطاق</span>
+    ${pending ? `<span class="chip" style="background:#fef9c3;color:#854d0e">⏳ ${pending} قيد الحساب</span>` : ''}
+    <span class="chip" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0">🔵 نطاق: ${b.radius} كم</span>`;
+  const minFee = minF < Infinity ? Math.round(minF * RATE) : 0;
+  const maxFee = Math.round(maxF * RATE);
+  document.getElementById('priceNote').innerHTML =
+    `<span style="color:var(--primary);font-weight:700">📍 ${b.addr}</span><br>
+     <span style="font-size:11px;color:var(--muted)">${b.lat.toFixed(4)}, ${b.lng.toFixed(4)}</span><br><br>
+     💰 رسوم التوصيل: <b>${minFee} – ${maxFee}</b> جنيه (5 جنيه × الكيلومتر)`;
+}
+
+// ── TABLE ────────────────────────────────────────────────
+function getFiltered() {
+  if (!selBranch) return [];
+  const b  = BRANCHES.find(b => b.k === selBranch);
+  const st = document.getElementById('tableSearch').value.trim().toLowerCase();
+  return AREAS
+    .map((a, i) => ({...a, _i: i}))
+    .filter(a => {
+      if (a.k !== selBranch) return false;
+      const c   = dmCache[selBranch+'|'+a._i];
+      const out = c ? c.km > b.radius : false;
+      if (activeFilter === 'covered' && (out || !c)) return false;
+      if (activeFilter === 'out' && !out) return false;
+      if (st && !a.ar.includes(st) && !a.en.toLowerCase().includes(st)) return false;
+      return true;
+    })
+    .map(a => {
+      const c   = dmCache[selBranch+'|'+a._i];
+      const km  = c ? c.km : null;
+      const dur = c ? c.dur : null;
+      const out = km !== null && km > b.radius;
+      return {...a, km, dur, out, fee: km !== null ? Math.round(km * RATE) : null};
+    });
+}
+
+function renderTable() {
+  const rows = getFiltered();
+  document.getElementById('noRes').style.display = rows.length ? 'none' : 'block';
+  document.getElementById('tableBody').innerHTML = rows.map((a,i) => `
+    <tr onclick="focusArea(${a._i})">
+      <td style="color:var(--muted);font-size:11px;font-weight:600">${i+1}</td>
+      <td><div class="anar">${a.ar}</div><div class="anen">${a.en}</div></td>
+      <td><span style="color:${a.km===null?'var(--muted)':a.out?'var(--red)':'var(--accent2)'};font-weight:700;font-size:12px">${a.km!==null?a.km+' كم':'⏳'}</span></td>
+      <td><span class="tbadge" style="background:${a.out?'var(--red-bg)':'var(--green-bg)'};color:${a.out?'var(--red)':'var(--green)'}">
+        ${a.fee!==null?a.fee+' ج.م':'—'}
+      </span></td>
+      <td>${a.km===null
+        ? '<span class="tbadge" style="background:#fef9c3;color:#854d0e">⏳</span>'
+        : a.out
+          ? '<span class="tbadge" style="background:var(--red-bg);color:var(--red)">❌ خارج</span>'
+          : '<span class="tbadge" style="background:var(--green-bg);color:var(--green)">✅ ضمن</span>'
+      }</td>
+    </tr>`).join('');
+}
+
+function filterTable() { renderTable(); }
+function setFilter(f, el) {
+  activeFilter = f;
+  document.querySelectorAll('.ftab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active'); renderTable();
+}
+
+// ── MAP ──────────────────────────────────────────────────
+function updateMap() {
+  const b = BRANCHES.find(b => b.k === selBranch);
+  if (!b) return;
+  areaMarkers.forEach(m => m.setMap(null)); areaMarkers = [];
+  if (branchMarker)  branchMarker.setMap(null);
+  if (circleOverlay) circleOverlay.setMap(null);
+
+  const center = {lat: b.lat, lng: b.lng};
+  map.setCenter(center); map.setZoom(12);
+
+  circleOverlay = new google.maps.Circle({map, center, radius: b.radius * 1000,
+    strokeColor:'#16a34a', strokeOpacity:.7, strokeWeight:2,
+    fillColor:'#16a34a', fillOpacity:.07});
+
+  branchMarker = new google.maps.Marker({map, position: center, title: b.ar, zIndex: 999,
+    icon:{path:google.maps.SymbolPath.CIRCLE, scale:14,
+      fillColor:'#1a2e4a', fillOpacity:1, strokeColor:'#e8a020', strokeWeight:3}});
+  branchMarker.addListener('click', () => {
+    infoWindow.setContent(`<div style="font-family:Cairo,sans-serif;direction:rtl;padding:6px 8px;min-width:200px">
+      <b style="color:#1a2e4a;font-size:14px">🏪 فرع ${b.ar}</b><br>
+      <span style="font-size:11px;color:#6b7e95">${b.en}</span><br>
+      <span style="font-size:11px;color:#6b7e95;margin-top:3px;display:block">📍 ${b.addr}</span>
+      <span style="font-size:12px;color:#16a34a;margin-top:6px;display:block;font-weight:700">✅ نطاق: ${b.radius} كم | 5 جنيه/كم</span>
+    </div>`);
+    infoWindow.open(map, branchMarker);
+  });
+
+  // Place markers using stored lat/lng — instant, no API needed
+  AREAS.forEach((area, i) => {
+    if (area.k !== selBranch) return;
+    const c     = dmCache[selBranch+'|'+i];
+    const km    = c ? c.km : null;
+    const out   = km !== null && km > b.radius;
+    const color = km === null ? '#94a3b8' : (out ? '#dc2626' : '#16a34a');
+
+    const marker = new google.maps.Marker({map,
+      position: {lat: area.lat, lng: area.lng}, title: area.ar,
+      icon:{path:google.maps.SymbolPath.CIRCLE, scale:7,
+        fillColor: color, fillOpacity:.9, strokeColor:'#fff', strokeWeight:1.5}});
+    marker.addListener('click', () => {
+      const cv   = dmCache[selBranch+'|'+i];
+      const km2  = cv ? cv.km : null;
+      const out2 = km2 !== null && km2 > b.radius;
+      const fee2 = km2 !== null ? Math.round(km2 * RATE) : null;
+      infoWindow.setContent(`<div style="font-family:Cairo,sans-serif;direction:rtl;padding:6px 8px;min-width:190px">
+        <b style="color:#1a2e4a;font-size:13px">${area.ar}</b><br>
+        <span style="font-size:10px;color:#6b7e95">${area.en}</span>
+        <div style="margin-top:8px;display:flex;flex-direction:column;gap:5px">
+          <span style="font-size:12px">📏 المسافة: <b>${km2!==null?km2+' كم (طريق السيارة)':'⏳ جاري الحساب'}</b></span>
+          ${cv&&cv.dur?`<span style="font-size:12px">⏱ وقت التوصيل: <b>${cv.dur}</b></span>`:''}
+          <span style="font-size:12px">💰 رسوم التوصيل: <b style="color:${out2?'#dc2626':'#16a34a'}">${fee2!==null?fee2+' جنيه':'—'}</b></span>
+          <span style="font-size:12px">${km2===null?'⏳ جاري الحساب':out2?'❌ خارج نطاق التوصيل':'✅ ضمن نطاق التوصيل'}</span>
+        </div>
+      </div>`);
+      infoWindow.open(map, marker);
+    });
+    areaMarkers.push(marker);
+  });
+}
+
+function refreshMarkers(k) {
+  const b = BRANCHES.find(b => b.k === k);
+  AREAS.forEach((area, i) => {
+    if (area.k !== k) return;
+    const marker = areaMarkers.find(m => m.getTitle() === area.ar);
+    if (!marker) return;
+    const c   = dmCache[k+'|'+i];
+    const km  = c ? c.km : null;
+    const out = km !== null && km > b.radius;
+    marker.setIcon({path:google.maps.SymbolPath.CIRCLE, scale:7,
+      fillColor: km===null?'#94a3b8':out?'#dc2626':'#16a34a',
+      fillOpacity:.9, strokeColor:'#fff', strokeWeight:1.5});
+  });
+}
+
+function focusArea(idx) {
+  const area = AREAS.filter(a => a.k === selBranch)[idx];
+  if (!area) return;
+  const marker = areaMarkers.find(m => m.getTitle() === area.ar);
+  if (marker) { map.panTo(marker.getPosition()); map.setZoom(14); google.maps.event.trigger(marker,'click'); }
+}
+
+// ── ADDRESS CHECKER ──────────────────────────────────────
+function checkAddress() {
+  const addr = document.getElementById('addrInput').value.trim();
+  if (!addr) return;
+  if (!selBranch) { alert('يرجى اختيار الفرع أولاً'); return; }
+  const b  = BRANCHES.find(b => b.k === selBranch);
+  const rb = document.getElementById('resultBox');
+  rb.className = 'result-box show';
+  rb.innerHTML = '<div style="text-align:center;padding:10px;color:var(--muted)">⏳ جاري الحساب...</div>';
+
+  new google.maps.Geocoder().geocode({address: addr + ', Egypt'}, (res, st) => {
+    if (st !== 'OK' || !res[0]) {
+      rb.innerHTML = '<div class="rb-title">❌ لم يتم العثور على العنوان</div>'; return;
+    }
+    const dest = res[0].geometry.location;
+    new google.maps.DistanceMatrixService().getDistanceMatrix({
+      origins: [{lat: b.lat, lng: b.lng}], destinations: [dest],
+      travelMode: google.maps.TravelMode.DRIVING, unitSystem: google.maps.UnitSystem.METRIC,
+    }, (resp, s2) => {
+      if (s2 !== 'OK') { rb.innerHTML = '<div class="rb-title">❌ خطأ في حساب المسافة</div>'; return; }
+      const el = resp.rows[0].elements[0];
+      if (el.status !== 'OK') { rb.innerHTML = '<div class="rb-title">❌ المسافة غير متاحة</div>'; return; }
+      const km      = +(el.distance.value / 1000).toFixed(1);
+      const fee     = Math.round(km * RATE);
+      const covered = km <= b.radius;
+      rb.className  = `result-box show ${covered ? 'covered' : 'out'}`;
+      rb.innerHTML  = `
+        <div class="rb-title">${covered ? '✅ ضمن نطاق التوصيل' : '❌ خارج نطاق التوصيل'}</div>
+        <div class="rb-row"><span class="rb-label">العنوان</span><span class="rb-val" style="max-width:200px;text-align:left;font-size:11px">${res[0].formatted_address}</span></div>
+        <div class="rb-row"><span class="rb-label">المسافة (طريق السيارة)</span><span class="rb-val">${km} كم</span></div>
+        <div class="rb-row"><span class="rb-label">وقت التوصيل التقريبي</span><span class="rb-val">${el.duration.text}</span></div>
+        <div class="rb-row"><span class="rb-label">حد التوصيل للفرع</span><span class="rb-val">${b.radius} كم</span></div>
+        <div class="rb-row"><span class="rb-label">رسوم التوصيل</span><span class="rb-fee">${covered ? fee+' جنيه' : 'خارج النطاق'}</span></div>`;
+      new google.maps.Marker({map, position: dest, animation: google.maps.Animation.DROP,
+        icon:{path:google.maps.SymbolPath.BACKWARD_CLOSED_ARROW, scale:6,
+          fillColor: covered?'#16a34a':'#dc2626', fillOpacity:1, strokeColor:'#fff', strokeWeight:2}});
+      map.panTo(dest); map.setZoom(13);
+    });
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('addrInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') checkAddress();
+  });
+});
+</script>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB41DRUbKWJHPxaFjMAwdrzWzbVKartNGg&callback=initMap&language=ar" async defer></script>
+
+</body>
+</html>
